@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatrixGlam - Салон красоты</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>MatrixGlam</h1>
+            <p>Салон красоты</p>
+        </div>
+        <nav>
+            <ul class="tabs">
+                <li><button class="tab-btn active" data-tab="home">Главная</button></li>
+                <li><button class="tab-btn" data-tab="booking">Запись</button></li>
+                <li><button class="tab-btn" data-tab="masters">Мастера</button></li>
+                <li><button class="tab-btn" data-tab="admin">Админ</button></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Главная страница -->
+        <section id="home" class="tab-content active">
+            <h2>Наши услуги</h2>
+            <div class="services">
+                <div class="service-card" data-service="female-haircut">
+                    <div class="service-icon">👩</div>
+                    <h3>Женская стрижка</h3>
+                    <p>Стильные и модные стрижки для женщин</p>
+                </div>
+                <div class="service-card" data-service="male-haircut">
+                    <div class="service-icon">👨</div>
+                    <h3>Мужская стрижка</h3>
+                    <p>Классические и современные мужские стрижки</p>
+                </div>
+                <div class="service-card" data-service="manicure">
+                    <div class="service-icon">💅</div>
+                    <h3>Маникюр</h3>
+                    <p>Ухоженные и красивые ногти</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Выбор мастера -->
+        <section id="booking" class="tab-content">
+            <div id="service-selection" style="display: none;">
+                <h2 id="selected-service-title"></h2>
+                <div class="masters-list" id="masters-list"></div>
+                <button id="back-to-services" class="btn-secondary">Назад к услугам</button>
+            </div>
+            
+            <div id="booking-form-container" style="display: none;">
+                <h2>Запись на услугу</h2>
+                <form id="booking-form">
+                    <input type="hidden" id="selected-master-id">
+                    <input type="hidden" id="selected-service-type">
+                    
+                    <div class="form-group">
+                        <label for="client-name">ФИО:</label>
+                        <input type="text" id="client-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="client-phone">Номер телефона:</label>
+                        <input type="tel" id="client-phone" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-date">Дата:</label>
+                        <input type="date" id="booking-date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="booking-time">Время:</label>
+                        <select id="booking-time" required>
+                            <option value="">Выберите время</option>
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:00">15:00</option>
+<option value="16:00">16:00</option>
+                            <option value="17:00">17:00</option>
+                            <option value="18:00">18:00</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="back-to-masters" class="btn-secondary">Назад к мастерам</button>
+                        <button type="submit" class="btn-primary">Записаться</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div id="services-selection" class="services">
+                <h2>Выберите услугу</h2>
+                <div class="service-card" data-service="female-haircut">
+                    <div class="service-icon">👩</div>
+                    <h3>Женская стрижка</h3>
+                    <p>Стильные и модные стрижки для женщин</p>
+                </div>
+                <div class="service-card" data-service="male-haircut">
+                    <div class="service-icon">👨</div>
+                    <h3>Мужская стрижка</h3>
+                    <p>Классические и современные мужские стрижки</p>
+                </div>
+                <div class="service-card" data-service="manicure">
+                    <div class="service-icon">💅</div>
+                    <h3>Маникюр</h3>
+                    <p>Ухоженные и красивые ногти</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Страница мастеров -->
+        <section id="masters" class="tab-content">
+            <h2>Наши мастера</h2>
+            <div class="masters-grid" id="all-masters"></div>
+        </section>
+
+        <!-- Админ панель -->
+        <section id="admin" class="tab-content">
+            <div id="admin-login">
+                <h2>Вход для администратора</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login">Логин:</label>
+                        <input type="text" id="login" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Пароль:</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Войти</button>
+                </form>
+                <p class="hint">Логин: admin, Пароль: admin123</p>
+            </div>
+            
+            <div id="admin-panel" style="display: none;">
+                <h2>Панель администратора</h2>
+                <button id="logout-btn" class="btn-secondary">Выйти</button>
+                <div class="bookings-list" id="admin-bookings"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Модальное окно подтверждения -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content">
+            <h3>Запись успешно создана!</h3>
+            <p>Ваша запись была сохранена. Ожидайте подтверждения от администратора.</p>
+            <button id="close-modal" class="btn-primary">ОК</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
