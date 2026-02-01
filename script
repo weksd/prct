@@ -1,0 +1,377 @@
+// script.js
+console.log('script.js loaded');
+// Данные мастеров
+const masters = [
+    {
+        id: 1,
+        name: "Анна Смирнова",
+        specialty: "Женская стрижка",
+        serviceType: "female-haircut",
+        photo: "👩",
+        description: "Опыт работы 10 лет. Специалист по модным стрижкам и окрашиванию.",
+        rating: "★★★★★"
+    },
+    {
+        id: 2,
+        name: "Дмитрий Иванов",
+        specialty: "Мужская стрижка",
+        serviceType: "male-haircut",
+        photo: "👨",
+        description: "Мастер мужских стрижек с опытом 8 лет. Классика и современные тенденции.",
+        rating: "★★★★☆"
+    },
+    {
+        id: 3,
+        name: "Елена Петрова",
+        specialty: "Маникюр",
+        serviceType: "manicure",
+        photo: "💅",
+        description: "Нейл-мастер премиум класса. Опыт работы 12 лет.",
+        rating: "★★★★★"
+    }
+];
+// Услуги
+const services = {
+    "female-haircut": {
+        title: "Женская стрижка",
+        description: "Стильные и модные стрижки для женщин",
+        price: "от 1500 руб."
+    },
+    "male-haircut": {
+        title: "Мужская стрижка",
+        description: "Классические и современные мужские стрижки",
+        price: "от 800 руб."
+    },
+    "manicure": {
+        title: "Маникюр",
+        description: "Ухоженные и красивые ногти",
+        price: "от 1200 руб."
+    }
+};
+// Инициализация хранилища
+if (!localStorage.getItem('bookings')) {
+    localStorage.setItem('bookings', JSON.stringify([]));
+}
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM ready');
+
+    // Переключение вкладок
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+
+            tabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            tabContents.forEach(content => content.classList.remove('active'));
+            const target = document.getElementById(tabId);
+            if (target) target.classList.add('active');
+
+            if (tabId === 'masters') loadAllMasters();
+            if (tabId === 'home') resetBookingFlow();
+            if (tabId === 'admin') {
+                const loginBlock = document.getElementById('admin-login');
+                const panel = document.getElementById('admin-panel');
+                if (loginBlock) loginBlock.style.display = 'block';
+                if (panel) panel.style.display = 'none';
+            }
+        });
+    });
+
+    // Выбор услуги (оба блока) — используем делегирование для контейнеров
+    const homeServicesContainer = document.querySelector('#home .services');
+    const bookingServicesContainer = document.getElementById('services-selection');
+
+    function serviceClickHandler(e) {
+        const card = e.target.closest('.service-card');
+        if (!card) return;
+        const serviceType = card.getAttribute('data-service');
+        if (!serviceType) return;
+        selectService(serviceType);
+        // Переключаемся на вкладку записи
+        const bookingTabBtn = document.querySelector('[data-tab="booking"]');
+        if (bookingTabBtn) bookingTabBtn.click();
+    }
+
+    if (homeServicesContainer) homeServicesContainer.addEventListener('click', serviceClickHandler);
+    if (bookingServicesContainer) bookingServicesContainer.addEventListener('click', serviceClickHandler);
+
+    // Кнопка "Назад к услугам"
+    const backToServicesBtn = document.getElementById('back-to-services');
+    if (backToServicesBtn) backToServicesBtn.addEventListener('click', resetBookingFlow);
+
+    // Кнопка "Назад к мастерам"
+    const backToMastersBtn = document.getElementById('back-to-masters');
+    if (backToMastersBtn) backToMastersBtn.addEventListener('click', function() {
+        const formContainer = document.getElementById('booking-form-container');
+        const serviceSelection = document.getElementById('service-selection');
+        if (formContainer) formContainer.style.display = 'none';
+        if (serviceSelection) serviceSelection.style.display = 'block';
+    });
+
+    // Форма записи
+    const bookingForm = document.getElementById('booking-form');
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            createBooking();
+        });
+    }
+
+    // Форма входа администратора
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+
+            if (login === 'admin' && password === 'admin123') {
+                document.getElementById('admin-login').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                loadAdminBookings();
+            } else {
+                alert('Неверный логин или пароль!');
+            }
+        });
+    }
+
+    // Кнопка выхода
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function() {
+            document.getElementById('admin-login').style.display = 'block';
+            document.getElementById('admin-panel').style.display = 'none';
+            if (loginForm) loginForm.reset();
+        });
+    }
+
+    // Закрытие модального окна
+    const closeModalBtn = document.getElementById('close-modal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            const modal = document.getElementById('success-modal');
+            if (modal) modal.style.display = 'none';
+            resetBookingFlow();
+        });
+    }
+
+    // Загружаем мастеров при загрузке страницы
+    loadAllMasters();
+});
+
+function selectService(serviceType) {
+    const service = services[serviceType];
+    if (!service) return;
+    const serviceMasters = masters.filter(master => master.serviceType === serviceType);
+
+const servicesSelection = document.getElementById('services-selection');
+const serviceSelection = document.getElementById('service-selection');
+const selectedTitle = document.getElementById('selected-service-title');
+const mastersList = document.getElementById('masters-list');
+
+
+    if (servicesSelection) servicesSelection.style.display = 'none';
+    if (serviceSelection) serviceSelection.style.display = 'block';
+    if (selectedTitle) selectedTitle.textContent = service.title;
+    if (mastersList) mastersList.innerHTML = '';
+
+    serviceMasters.forEach(master => {
+        const masterCard = document.createElement('div');
+        masterCard.className = 'master-card';
+        masterCard.innerHTML = `
+            <div class="master-photo">${master.photo}</div>
+            <h3>${master.name}</h3>
+            <p class="master-specialty">${master.specialty}</p>
+            <p>${master.description}</p>
+            <p><strong>Рейтинг:</strong> ${master.rating}</p>
+            <p><strong>Стоимость:</strong> ${service.price}</p>
+            <button class="btn-primary book-master-btn" data-master-id="${master.id}">Записаться</button>
+        `;
+        mastersList.appendChild(masterCard);
+    });
+
+    // Вешаем делегированно на контейнер, но также можно вешать на кнопки
+    if (mastersList) {
+        mastersList.addEventListener('click', function handler(e) {
+            const btn = e.target.closest('.book-master-btn');
+            if (!btn) return;
+            const masterId = btn.getAttribute('data-master-id');
+            selectMaster(masterId, serviceType);
+        }, { once: false });
+    }
+}
+
+function selectMaster(masterId, serviceType) {
+    document.getElementById('selected-master-id').value = masterId;
+    document.getElementById('selected-service-type').value = serviceType;
+
+    const serviceSelection = document.getElementById('service-selection');
+    const formContainer = document.getElementById('booking-form-container');
+    if (serviceSelection) serviceSelection.style.display = 'none';
+    if (formContainer) formContainer.style.display = 'block';
+
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('booking-date');
+    if (dateInput) {
+        dateInput.min = today;
+        dateInput.value = today;
+    }
+}
+
+function createBooking() {
+    const masterId = parseInt(document.getElementById('selected-master-id').value, 10);
+    const serviceType = document.getElementById('selected-service-type').value;
+    const clientName = document.getElementById('client-name').value;
+    const clientPhone = document.getElementById('client-phone').value;
+    const bookingDate = document.getElementById('booking-date').value;
+    const bookingTime = document.getElementById('booking-time').value;
+
+    const master = masters.find(m => m.id === masterId);
+    const service = services[serviceType];
+
+    if (!master || !service) {
+        alert('Ошибка: мастер или услуга не найдены.');
+        return;
+    }
+
+    const booking = {
+        id: Date.now(),
+        masterId: masterId,
+        masterName: master.name,
+        serviceType: serviceType,
+        serviceName: service.title,
+        clientName: clientName,
+        clientPhone: clientPhone,
+        date: bookingDate,
+        time: bookingTime,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    bookings.push(booking);
+    localStorage.setItem('bookings', JSON.stringify(bookings));
+
+    const modal = document.getElementById('success-modal');
+    if (modal) modal.style.display = 'flex';
+
+    const bookingForm = document.getElementById('booking-form');
+    if (bookingForm) bookingForm.reset();
+}
+
+function loadAllMasters() {
+    const mastersGrid = document.getElemen
+tById('all-masters');
+    if (!mastersGrid) return;
+    mastersGrid.innerHTML = '';
+
+    masters.forEach(master => {
+        const service = services[master.serviceType];
+        const masterCard = document.createElement('div');
+        masterCard.className = 'master-card';
+        masterCard.innerHTML = `
+            <div class="master-photo">${master.photo}</div>
+            <h3>${master.name}</h3>
+            <p class="master-specialty">${master.specialty}</p>
+            <p>${master.description}</p>
+            <p><strong>Рейтинг:</strong> ${master.rating}</p>
+            <p><strong>Стоимость услуги:</strong> ${service ? service.price : ''}</p>
+            <button class="btn-primary book-from-masters" data-service="${master.serviceType}">Записаться</button>
+        `;
+        mastersGrid.appendChild(masterCard);
+    });
+
+    // Делегирование на сетку мастеров
+    mastersGrid.addEventListener('click', function(e) {
+        const btn = e.target.closest('.book-from-masters');
+        if (!btn) return;
+        const serviceType = btn.getAttribute('data-service');
+        const bookingTabBtn = document.querySelector('[data-tab="booking"]');
+        if (bookingTabBtn) bookingTabBtn.click();
+        selectService(serviceType);
+    });
+}
+
+function loadAdminBookings() {
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const adminBookings = document.getElementById('admin-bookings');
+
+    if (!adminBookings) return;
+
+    if (bookings.length === 0) {
+        adminBookings.innerHTML = '<p>Записей пока нет.</p>';
+        return;
+    }
+
+    adminBookings.innerHTML = '';
+
+    bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    bookings.forEach(booking => {
+        const bookingCard = document.createElement('div');
+        bookingCard.className = 'booking-card';
+        bookingCard.innerHTML = `
+            <div class="booking-header">
+                <h3>${booking.clientName}</h3>
+                <span class="status ${booking.status}">${booking.status === 'pending' ? 'Ожидает' : 'Подтверждена'}</span>
+            </div>
+            <p><strong>Услуга:</strong> ${booking.serviceName}</p>
+            <p><strong>Мастер:</strong> ${booking.masterName}</p>
+            <p><strong>Телефон:</strong> ${booking.clientPhone}</p>
+            <p><strong>Дата и время:</strong> ${booking.date} ${booking.time}</p>
+            <p><strong>Создана:</strong> ${new Date(booking.createdAt).toLocaleString()}</p>
+            <div class="booking-actions">
+                ${booking.status === 'pending' ? `<button class="btn-primary confirm-booking" data-booking-id="${booking.id}">Подтвердить</button>` : ''}
+                <button class="btn-secondary delete-booking" data-booking-id="${booking.id}">Удалить</button>
+            </div>
+        `;
+        adminBookings.appendChild(bookingCard);
+    });
+
+    // Обработчики действий (делегирование)
+    adminBookings.addEventListener('click', function(e) {
+        const confirmBtn = e.target.closest('.confirm-booking');
+        if (confirmBtn) {
+            const bookingId = parseInt(confirmBtn.getAttribute('data-booking-id'), 10);
+            confirmBooking(bookingId);
+            return;
+        }
+        const deleteBtn = e.target.closest('.delete-booking');
+        if (deleteBtn) {
+            const bookingId = parseInt(deleteBtn.getAttribute('data-booking-id'), 10);
+            deleteBooking(bookingId);
+        }
+    });
+}
+
+function confirmBooking(bookingId) {
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const bookingIndex = bookings.findIndex(b => b.id === bookingId);
+
+    if (bookingIndex !== -1) {
+bookings[bookingIndex].status = 'confirmed';
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+        loadAdminBookings();
+    }
+}
+
+function deleteBooking(bookingId) {
+    if (!confirm('Вы уверены, что хотите удалить эту запись?')) return;
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const filteredBookings = bookings.filter(b => b.id !== bookingId);
+    localStorage.setItem('bookings', JSON.stringify(filteredBookings));
+    loadAdminBookings();
+}
+
+function resetBookingFlow() {
+    const servicesSelection = document.getElementById('services-selection');
+    const serviceSelection = document.getElementById('service-selection');
+    const formContainer = document.getElementById('booking-form-container');
+    if (servicesSelection) servicesSelection.style.display = 'block';
+    if (serviceSelection) serviceSelection.style.display = 'none';
+    if (formContainer) formContainer.style.display = 'none';
+}
